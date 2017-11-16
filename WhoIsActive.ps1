@@ -75,7 +75,7 @@ EXEC sp_WhoIsActive
         }
       }
     }
-    # Move long columns to $dt2
+    # Move long columns to $dt2 so that the main report file doesn't get cluttered up.
     if($null -ne $dt2) {
       $newRow = $dt2.NewRow()
       $newRow["session_id"] = $r["session_id"]
@@ -88,7 +88,7 @@ EXEC sp_WhoIsActive
   $timestamp = $now.ToString("yyyyMMddHHmmss")
   $outputPath = "F:\jobs\log\sqlServerBlocking\$timestamp"
   # $dt | Export-Csv -NoTypeInformation -Path "$outputPath.csv" -Encoding UTF8
-  # Neither Excel nor Calc can properly display a CSV cell with really long value, so using HTML instead.
+  # Neither Excel nor Calc properly handles CSV with cells containing really long value, so using HTML instead.
   WriteHtml -dt $dt -path $outputPath -time $now
   if($null -ne $dt2) {
     # $dt2 | Export-Csv -NoTypeInformation -Path "${outputPath}L.csv" -Encoding UTF8
