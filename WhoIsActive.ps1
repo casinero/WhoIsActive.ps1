@@ -2,7 +2,9 @@ function BeautifyXML($xml) {
   if($xml.GetType().FullName -eq "System.DBNull") { return "" }
   if($xml.GetType().FullName -eq "System.String") {
     $xmlDoc = New-Object System.Xml.XmlDocument
-    $xmlDoc.LoadXml($xml)
+    try {
+      $xmlDoc.LoadXml($xml)
+    } catch { return $xml }
     $xml = $xmlDoc
   }
   $StringWriter = New-Object System.IO.StringWriter 
@@ -14,11 +16,9 @@ function BeautifyXML($xml) {
   $StringWriter.Flush()
   return $StringWriter.ToString()
 }
-function WriteHtml([System.Data.DataTable]$dt, [string]$path, [System.DateTime]$time, [string]$extra = "") {
+function WriteHtml([System.Data.DataTable]$dt, [string]$path, [string]$title) {
   $columns = @()
   foreach($column in $dt.Columns) { $columns += $column.ColumnName }
-  $title = $time.ToString("M/d H:m:s")
-  if($extra -ne "") { $title = "($extra) $title" }
   $head = @"
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <title>$title</title>
@@ -89,15 +89,16 @@ EXEC sp_WhoIsActive
   $outputPath = "F:\jobs\log\sqlServerBlocking\$timestamp"
   # $dt | Export-Csv -NoTypeInformation -Path "$outputPath.csv" -Encoding UTF8
   # Neither Excel nor Calc properly handles CSV with cells containing really long value, so using HTML instead.
-  WriteHtml -dt $dt -path $outputPath -time $now
+  $timestamp2 = $now.ToString("M/d H:m:s")
+  WriteHtml -dt $dt -path $outputPath -title $timestamp2
   if($null -ne $dt2) {
     # $dt2 | Export-Csv -NoTypeInformation -Path "${outputPath}L.csv" -Encoding UTF8
-    WriteHtml -dt $dt2 -path "${outputPath}L" -time $now -extra "L"
+    WriteHtml -dt $dt2 -path "${outputPath}L" -title "(L) $timestamp2"
   }
   
   if(($dt.Rows.Count -gt 0) -and ($dt.Rows[0]["status"] -eq "sleeping") -and ($dt.Rows[0]["blocked_session_count"] -gt 0)) {
-    # A sleeping session blocking others?
-    # Maybe you want to send an email to warn yourself about this situation, or something like that?
+    # A sleeping session blocking others...
+    # Maybe you want to take some action, such as sending an email to warn yourself about this situation?
   }
 } finally {
   if($null -ne $dt2) { $dt2.Dispose() }
